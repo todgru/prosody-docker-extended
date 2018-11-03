@@ -21,10 +21,10 @@ RUN set -x \
  && apt-get install -qy telnet \
     apt-utils mercurial lua-sec lua-event lua-zlib lua-ldap \
     lua-dbi-mysql lua-dbi-postgresql lua-dbi-sqlite3 lua-bitop \
-    prosody${PROSODY_VERSION} \
+    prosody-migrator${PROSODY_VERSION} prosody${PROSODY_VERSION} \
  && apt-get purge apt-utils -qy \
  && apt-get clean && rm -Rf /var/lib/apt/lists \
- && sed -i '1s/^/daemonize = false;\n/' /etc/prosody/prosody.cfg.lua \
+ && sed -i -e '1s/^/daemonize = false;\n/' -e 's/daemonize = true/-- daemonize = true/g' /etc/prosody/prosody.cfg.lua \
  && perl -i -pe '$_ = qq[\n-- These paths are searched in the order specified, and before the default path\nplugin_paths = { \"$ENV{CUSTOM_MODULES}\", \"$ENV{PROSODY_MODULES}\" }\n\n$_] if $_ eq qq[modules_enabled = {\n]' \
          /etc/prosody/prosody.cfg.lua \
  && perl -i -pe 'BEGIN{undef $/;} s/^log = {.*?^}$/log = {\n    {levels = {min = "info"}, to = "console"};\n}/smg' /etc/prosody/prosody.cfg.lua \

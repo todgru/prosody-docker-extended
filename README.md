@@ -6,13 +6,10 @@ This project was inspired by the [official Prosody Docker](https://github.com/pr
 ## Building
 
 ```
-docker build --build-arg PROSODY_VERSION="" --rm=true -t unclev/prosody-docker-extended:stable .
+docker build --rm=true -t unclev/prosody-docker-extended .
 ```
 
-Where PROSODY_VERSION can also be `-trunk`, `-0.10`, `-0.9` for nightly builds.
-
 It is available at [Docker Hub](https://hub.docker.com/r/unclev/prosody-docker-extended/).
-The tags are: latest, 0.10, 0.9, for prosody-trunk, prosody-0.10, prosody-0.9 accordingly, "stable" tag for prosody with no version specified (as per above).
 
 The [Docker Hub](https://hub.docker.com/r/unclev/prosody-docker-extended/) images are now re-builds within an hour after each nightly build in the official Prosody deb [repository](https://prosody.im/download/package_repository).
 
