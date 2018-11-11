@@ -6,7 +6,7 @@ This project was inspired by the [official Prosody Docker](https://github.com/pr
 ## Building
 
 ```
-docker build --rm=true -t unclev/prosody-docker-extended .
+docker build --rm=true -t unclev/prosody-docker-extended:experimental .
 ```
 
 It is available at [Docker Hub](https://hub.docker.com/r/unclev/prosody-docker-extended/).
@@ -77,7 +77,7 @@ docker run -d \
    -v /srv/prosody/log:/var/log/prosody \
    -v /srv/prosody/modules/community:/usr/lib/prosody/modules-community \
    -v /srv/prosody/modules/custom:/usr/lib/prosody/modules-custom \
-   unclev/prosody-docker-extended:0.10
+   unclev/prosody-docker-extended:experimental
 ```
 
 docker-compose.yml (v1) with PostgreSQL backend:
@@ -93,7 +93,7 @@ sql:
     - '/srv/prosody/db/postgresql:/var/lib/postgresql/prosody'
 
 xmpp_server:
-  image: unclev/prosody-docker-extended:0.10
+  image: unclev/prosody-docker-extended:experimental
   restart: unless-stopped
   hostname: shakespeare.lit
   ports:
@@ -190,6 +190,48 @@ no changes found
 As a workaround you can put modules being used in your persistent location and map `/usr/lib/prosody/modules-custom` to it.
 
 The __prosody-docker-extended__ image is configured to look for modules under this location first.
+
+### luarocks support
+It has luarocks installed via apt package manager, and experimental luarocks support at startup.
+
+It installs listed luarocks into `/var/lib/prosody/.luarocks` and it is supposed to be in a persistent location.
+
+If you have already mapped prosody directory, eg.: `- '/srv/prosody/data:/var/lib/prosody'`, create `.luarocks` subdirectory in there, - it must be readable and writable for the `prosody` user; else you can create a 'luarocks' volume, eg.: `- '/srv/prosody/luarocks:/var/lib/prosody/.luarocks'`.
+
+In your `.luarocks` directory create file `luarocks.install.local`, and list luarocks modules you want to install, eg.:
+
+```
+bcrypt
+LuaSec
+```
+
+When the container starts and executes `entrypoint.sh` in the name of prosody user, it executes (simplified here):
+
+```shell
+luarocks install --local $line
+```
+
+for each `line` of `luarocks.install.local` that is not in `luarocks.local.installed` file. If installation of a luarock was successful, it appends the line to `luarocks.local.installed` in the same `.luarocks` directory.
+
+> _With `luarocks install` [luarocks re-installs module each time](https://github.com/luarocks/luarocks/issues/417) the install command is issued, - that is why `luarocks.local.installed` has been introduced so that it does not install rocks on each container start._
+
+If you want re-installing a _rock_ - remove the corresponding line from `luarocks.local.installed`, or delete `luarocks.local.installed` for re-installing all _rocks_.
+
+#### Caveats
+
+1. If `.luarocks` directory does not survive between container restarts, but `luarocks.install.local` exists (for eg. by mapping a host file to a container), - the listed luarocks are installed on each start.
+
+2. _Luarocks modules_ are installed at least on the first container start, - this requires connection to the Internet.
+
+**Alternatively**, one can fork **prosody-docker-extended**, and include _rocks_ installation in their Dockerfile, eg.:
+
+```
+FROM unclev/prosody-docker-extended:experimental
+RUN `luarocks path` \
+ && luarocks install --local bcrypt \
+ && luarocks install --local LuaSec \
+ && echo "Installed successfully!"
+```
 
 ### Logs
 The Prosody server within the __prosody-docker-extended__ image is configured to log to "console" (see [advanced_logging](https://prosody.im/doc/advanced_logging) in the Prosody documentation). 

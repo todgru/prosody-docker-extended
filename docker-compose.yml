@@ -12,3 +12,5 @@ services:
       - 5281:5281
       - 5380:80
     entrypoint: bash
+      volumes:
+      - './data:/var/lib/prosody'

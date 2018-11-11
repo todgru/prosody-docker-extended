@@ -1,2 +1,6 @@
 *~
 *.swp
+/data/
+.bash_history
+**/.cache/
+luarocks.local.installed

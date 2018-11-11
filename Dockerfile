@@ -1,14 +1,12 @@
 FROM ubuntu:xenial
-MAINTAINER Victor Kulichenko <onclev@gmail.com>
+LABEL maintainer="Victor Kulichenko <onclev@gmail.com>"
 COPY prosody.list /etc/apt/sources.list.d/
-COPY ./entrypoint.sh /usr/bin/entrypoint.sh
-COPY ./update-modules.sh /usr/bin/update-modules
-COPY ./check_prosody_update.sh /usr/bin/check_prosody_update
 #ARG PROSODY_VERSION
 ENV PROSODY_VERSION="-trunk" \
     PUID=${PUID:-1000} PGID=${PGID:-1000} \
     PROSODY_MODULES=/usr/lib/prosody/modules-community \
-    CUSTOM_MODULES=/usr/lib/prosody/modules-custom
+    CUSTOM_MODULES=/usr/lib/prosody/modules-custom \
+    LUAROCKS_LOCAL=/var/lib/prosody/.luarocks
 
 # create prosody user with uid and gid predefined
 RUN groupadd -g $PGID -r prosody && useradd -b /var/lib -m -g $PGID -u $PUID -r -s /bin/bash prosody
@@ -22,6 +20,8 @@ RUN set -x \
     apt-utils mercurial lua-sec lua-event lua-zlib lua-ldap \
     lua-dbi-mysql lua-dbi-postgresql lua-dbi-sqlite3 lua-bitop \
     prosody-migrator${PROSODY_VERSION} prosody${PROSODY_VERSION} \
+    libssl-dev luarocks\
+ && luarocks path \
  && apt-get purge apt-utils -qy \
  && apt-get clean && rm -Rf /var/lib/apt/lists \
  && sed -i -e '1s/^/daemonize = false;\n/' -e 's/daemonize = true/-- daemonize = true/g' /etc/prosody/prosody.cfg.lua \
@@ -31,7 +31,13 @@ RUN set -x \
  && mkdir -p /var/run/prosody && chown prosody:adm /var/run/prosody \
  && cp -Rv /etc/prosody /etc/prosody.default && chown prosody:prosody -Rv /etc/prosody /etc/prosody.default \
  && mkdir -p "$PROSODY_MODULES" && chown prosody:prosody -R "$PROSODY_MODULES" && mkdir -p "$CUSTOM_MODULES" && chown prosody:prosody -R "$CUSTOM_MODULES" \
- && chmod 755 /usr/bin/entrypoint.sh /usr/bin/update-modules /usr/bin/check_prosody_update
+ && mkdir -p "$LUAROCKS_LOCAL" && chown prosody:prosody -Rv "$LUAROCKS_LOCAL"
+
+# scripts
+COPY ./entrypoint.sh /usr/bin/entrypoint.sh
+COPY ./update-modules.sh /usr/bin/update-modules
+COPY ./check_prosody_update.sh /usr/bin/check_prosody_update
+RUN chmod 755 /usr/bin/entrypoint.sh /usr/bin/update-modules /usr/bin/check_prosody_update
 
 VOLUME ["/etc/prosody", "/var/lib/prosody", "/var/log/prosody", "$PROSODY_MODULES", "$CUSTOM_MODULES"]
 
