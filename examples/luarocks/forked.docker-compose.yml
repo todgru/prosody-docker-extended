@@ -1,0 +1,32 @@
+version: '2'
+
+volumes:
+  data:
+    driver_opts:
+      device: ${PWD}/data
+      type: none
+      o: bind
+  luarocks:
+    driver_opts:
+      device: ${PWD}/luarocks
+      type: none
+      o: bind
+
+services:
+  xmpp_server:
+    build:
+      context: .
+      dockerfile: forked.Dockerfile
+    image: unclev/prosody-docker-extended:luarocks
+    restart: unless-stopped
+    ports:
+      - '5222:5222'
+      - '5269:5269'
+      - '5347:5347'
+      - '5280:5280'
+      - '5281:5281'
+      - '5380:80'
+    volumes:
+      - 'data:/var/lib/prosody'
+      - 'luarocks:/var/lib/prosody/.luarocks'
+
